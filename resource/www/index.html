@@ -9,12 +9,14 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+
         #content {
             border: 1px solid #ddd;
             padding: 20px;
             border-radius: 5px;
             background-color: #f9f9f9;
         }
+
         textarea {
             width: 100%;
             height: 150px;
@@ -25,30 +27,75 @@
     </style>
 </head>
 <body>
-    <h1>AI Search Demo</h1>
+<h1>AI Search Demo</h1>
+<div>
     <label>
         Query:
-        <input>
+        <input type="text" name="query" id="query">
     </label>
-    <div id="content"></div>
+    <input type="submit" value="Submit" id="submit">
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const md = window.markdownit();
-            const input = document.getElementById("markdown-input");
-            const content = document.getElementById("content");
+<div id="content"></div>
 
-            function renderMarkdown() {
-                const markdownText = input.value;
-                content.innerHTML = md.render(markdownText);
+<script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const md = window.markdownit();
+        const content = document.getElementById("content");
+
+        function renderMarkdown(markdownText) {
+            content.innerHTML = md.render(markdownText);
+        }
+
+        document.getElementById("submit").onclick = function submit() {
+            if (typeof (EventSource) !== "undefined") {
+                const eventSource = new EventSource("/api/ai-search?q=" + document.getElementById("query").value);
+                let responseList = [];
+                for (let i = 0; i < 4; i++) {
+                    responseList.push("");
+                }
+                let citationLinkList = [];
+
+                eventSource.onmessage = function (event) {
+                    if (event.data === "[DONE]") {
+                        eventSource.close();
+                        return;
+                    }
+                    let sseBody = JSON.parse(event.data);
+                    let idx = sseBody["idx"];
+                    if (idx === -1) {
+                        let citationList = [];
+                        let citations = sseBody["citations"];
+                        for (const citation of citations) {
+                            let i = citation["i"];
+                            let link = citation["link"];
+                            let title = citation["title"];
+                            citationList.push(i + ". [" + title + "](" + link + ")");
+                            citationLinkList.push(link);
+                        }
+                        responseList[responseList.length - 1] = citationList.join("\n");
+                        return;
+                    }
+                    responseList[idx] += sseBody["delta"];
+                    for (let i = 0; i < citationLinkList.length; i++) {
+                        responseList[idx] = responseList[idx].replace("[[" + i + "]]", "[(" + i + ")](" + citationLinkList[i] + ")");
+                    }
+                    content.innerHTML = md.render(responseList.join("\n\n---\n\n"));
+                };
+
+                eventSource.onopen = function () {
+                };
+
+                eventSource.onerror = function (error) {
+                    console.error("EventSource failed:", error);
+                    eventSource.close();
+                };
+            } else {
+                content.textContent = "Sorry, your browser does not support Server-Sent Events.";
             }
-
-            input.addEventListener("input", renderMarkdown);
-
-            // Initial render
-            renderMarkdown();
-        });
-    </script>
+        }
+    });
+</script>
 </body>
 </html>

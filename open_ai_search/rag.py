@@ -8,7 +8,7 @@ from prompt_toolkit.shortcuts import clear
 from pydantic import BaseModel, Field
 
 from config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL_NAME
-from open_ai_search.util.iterator_tool import merge_iterators
+from open_ai_search.iterator_tool import merge_iterators
 
 
 class Retrieval(BaseModel):
@@ -65,19 +65,18 @@ class RAG:
             for prompt in self.prompt_list
         ])
 
+        citations: List[Dict] = [{"i": i + 1, "title": retrieval.title, "link": retrieval.link}
+                                 for i, retrieval in enumerate(retrival_list)]
+        yield {
+            "idx": -1,
+            "citations": citations
+        }
+
         for idx, response in iterator:
             yield {
                 "idx": idx,
                 "delta": response.choices[0].delta.content
             }
-
-        citations = "\n".join([f"{i + 1}. [{retrieval.title}]({retrieval.link})"
-                               for i, retrieval in enumerate(retrival_list)])
-
-        yield {
-            "idx": len(self.prompt_list),
-            "delta": citations
-        }
 
 
 def main():
