@@ -28,6 +28,16 @@
             flex-basis: 25%;
             font-size: 90%;
         }
+
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -65,15 +75,17 @@
                     "qa": "",
                     "summary": "",
                     "related_question": "",
+                    "table": "",
                     "citation": ""
                 }
                 let blockHeader = {
                     "qa": "## Answer",
                     "summary": "## Summary",
+                    "table": "## Related entity",
                     "related_question": "## Related question",
                     "citation": "## Citations"
                 }
-                let keysOrder = ["qa", "related_question", "citation"]
+                let keysOrder = ["qa", "related_question", "table", "citation"]
                 let citationList = [];
 
                 function replace_citation(text) {

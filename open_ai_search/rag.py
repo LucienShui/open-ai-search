@@ -29,6 +29,7 @@ class RAG:
         self.prompt_dict = {
             "qa": "qa.txt",
             "summary": "summary.txt",
+            "table": "table.txt",
             "related_question": "related_question.txt"
         }
         for key, filename in self.prompt_dict.items():
