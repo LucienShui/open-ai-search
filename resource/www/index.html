@@ -10,24 +10,28 @@
             margin: 20px;
         }
 
-        #content {
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+        .container {
+            display: flex;
         }
 
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 20px;
-            font-family: monospace;
-            font-size: 14px;
+        #content #summary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #content {
+            flex-basis: 75%;
+        }
+
+        #summary {
+            flex-basis: 25%;
+            font-size: 90%;
         }
     </style>
 </head>
 <body>
-<h1>AI Search Demo</h1>
+<h2>Open AI Search</h2>
 <div>
     <label>
         Query:
@@ -36,26 +40,42 @@
     <input type="submit" value="Submit" id="submit">
 </div>
 
-<div id="content"></div>
-
+<div class="container">
+    <div id="content"></div>
+    <div id="summary"></div>
+</div>
+</body>
 <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const md = window.markdownit();
         const content = document.getElementById("content");
-
-        function renderMarkdown(markdownText) {
-            content.innerHTML = md.render(markdownText);
-        }
+        const summary = document.getElementById("summary");
 
         document.getElementById("submit").onclick = function submit() {
             if (typeof (EventSource) !== "undefined") {
                 const eventSource = new EventSource("/api/ai-search?q=" + document.getElementById("query").value);
-                let responseList = [];
-                for (let i = 0; i < 4; i++) {
-                    responseList.push("");
+                let responseBlock = {
+                    "qa": "",
+                    "summary": "",
+                    "related_question": "",
+                    "citation": ""
                 }
+                let blockHeader = {
+                    "qa": "## Answer",
+                    "summary": "## Summary",
+                    "related_question": "## Related question",
+                    "citation": "## Citations"
+                }
+                let keysOrder = ["qa", "related_question", "citation"]
                 let citationLinkList = [];
+
+                function replace_citation(text) {
+                    for (let i = 0; i < citationLinkList.length; i++) {
+                        text = text.replace("[[" + i + "]]", "[(" + i + ")](" + citationLinkList[i] + ")");
+                    }
+                    return text
+                }
 
                 eventSource.onmessage = function (event) {
                     if (event.data === "[DONE]") {
@@ -63,10 +83,10 @@
                         return;
                     }
                     let sseBody = JSON.parse(event.data);
-                    let idx = sseBody["idx"];
-                    if (idx === -1) {
+                    let block = sseBody["block"];
+                    if (block === "citation") {
                         let citationList = [];
-                        let citations = sseBody["citations"];
+                        let citations = sseBody["data"];
                         for (const citation of citations) {
                             let i = citation["i"];
                             let link = citation["link"];
@@ -74,14 +94,16 @@
                             citationList.push(i + ". [" + title + "](" + link + ")");
                             citationLinkList.push(link);
                         }
-                        responseList[responseList.length - 1] = citationList.join("\n");
-                        return;
+                        responseBlock[block] = citationList.join("\n");
+                    } else {
+                        responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
                     }
-                    responseList[idx] += sseBody["delta"];
-                    for (let i = 0; i < citationLinkList.length; i++) {
-                        responseList[idx] = responseList[idx].replace("[[" + i + "]]", "[(" + i + ")](" + citationLinkList[i] + ")");
+                    if (block === "summary") {
+                        summary.innerHTML = md.render(blockHeader[block] + "\n" + responseBlock[block]);
+                    } else {
+                        content.innerHTML = md.render(keysOrder.filter(key => responseBlock[key].length > 0)
+                            .map(key => blockHeader[key] + "\n" + responseBlock[key]).join("\n\n---\n\n"));
                     }
-                    content.innerHTML = md.render(responseList.join("\n\n---\n\n"));
                 };
 
                 eventSource.onopen = function () {
@@ -97,5 +119,4 @@
         }
     });
 </script>
-</body>
 </html>
