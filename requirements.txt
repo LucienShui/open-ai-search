@@ -3,5 +3,5 @@ fastapi~=0.111.0
 uvicorn~=0.30.0
 requests~=2.32.2
 openai~=1.30.4
-duckduckgo-search~=6.1.1
+duckduckgo-search~=6.1.4
 sse-starlette~=2.1.0

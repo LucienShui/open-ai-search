@@ -1,5 +1,4 @@
 import json
-import os
 from contextlib import asynccontextmanager
 from typing import Dict, AsyncIterable
 
@@ -10,6 +9,7 @@ from fastapi.responses import JSONResponse, Response, HTMLResponse
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
+from config import WORKERS, PORT
 from open_ai_search.rag import RAG
 
 
@@ -53,8 +53,8 @@ async def exception_handler(_: Request, e: Exception) -> Response:
     )
 
 
-def stream(q: str) -> AsyncIterable:
-    for response in rag.search(q):
+def stream(q: str, region: str, max_results: int) -> AsyncIterable:
+    for response in rag.search(q, region, max_results):
         yield json.dumps(
             response,
             ensure_ascii=False,
@@ -64,8 +64,12 @@ def stream(q: str) -> AsyncIterable:
 
 
 @app.get("/api/ai-search", response_model=Dict)
-async def search(q: str = Query(description="Search query")):
-    return EventSourceResponse(stream(q))
+async def search(
+        q: str = Query(description="Search query"),
+        region: str = Query(description="Region of result", default="cn-zh"),
+        max_results: int = Query(description="Max search result to use", default=30)
+):
+    return EventSourceResponse(stream(q, region, max_results))
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -77,8 +81,8 @@ def main():
     uvicorn.run(
         'main:app',
         host='0.0.0.0',
-        port=int(os.getenv("PORT", 8000)),
-        workers=int(os.getenv("WORKERS", 1))
+        port=PORT,
+        workers=WORKERS
     )
 
 

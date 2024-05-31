@@ -60,8 +60,8 @@ class RAG:
         ]
         return messages
 
-    def search(self, query: str, region: str = "cn-zh") -> Iterable[Dict[str, Union[str, int]]]:
-        search_result_list: List[Dict] = self.search_engine.text(query, region=region)
+    def search(self, query: str, region: str = "cn-zh", max_results: int = 10) -> Iterable[Dict[str, Union[str, Dict]]]:
+        search_result_list: List[Dict] = self.search_engine.text(query, region=region, max_results=max_results)
         retrival_list: List[Retrieval] = [Retrieval(**result) for result in search_result_list]
         iterator = merge_iterators([
             self.chat(messages=self.messages_prepare(query, prompt, retrival_list), stream=True)
