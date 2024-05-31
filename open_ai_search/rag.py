@@ -4,7 +4,6 @@ from typing import Optional, List, Iterable, Dict, Union
 
 from duckduckgo_search import DDGS
 from openai import OpenAI
-from prompt_toolkit.shortcuts import clear
 from pydantic import BaseModel, Field
 
 from config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL_NAME
@@ -80,16 +79,3 @@ class RAG:
                 "block": list(self.prompt_dict.keys())[idx],
                 "delta": response.choices[0].delta.content
             }
-
-
-def main():
-    rag = RAG()
-    result_list = ["" for _ in range(len(rag.prompt_dict) + 1)]
-    for each in rag.search("网商银行怎么样？"):
-        result_list[each["idx"]] += each["delta"]
-        clear()
-    print("\n\n---\n\n".join(result_list))
-
-
-if __name__ == '__main__':
-    main()

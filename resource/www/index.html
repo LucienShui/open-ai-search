@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-<h2>Open AI Search</h2>
+<h1>Open AI Search</h1>
 <div>
     <label>
         Query:
@@ -47,8 +47,14 @@
 </body>
 <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
 <script>
+    function aLink(title, link) {
+        return "<a href=\"" + link + "\" target=\"_blank\">" + title + "</a>"
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
-        const md = window.markdownit();
+        const md = window.markdownit({
+            html: true
+        });
         const content = document.getElementById("content");
         const summary = document.getElementById("summary");
 
@@ -68,11 +74,12 @@
                     "citation": "## Citations"
                 }
                 let keysOrder = ["qa", "related_question", "citation"]
-                let citationLinkList = [];
+                let citationList = [];
 
                 function replace_citation(text) {
-                    for (let i = 0; i < citationLinkList.length; i++) {
-                        text = text.replace("[[" + i + "]]", "[(" + i + ")](" + citationLinkList[i] + ")");
+                    for (const citation of citationList) {
+                        let citeId = "[" + citation["i"] + "]"
+                        text = text.replace("[" + citeId + "]", aLink(citeId, citation["link"]));
                     }
                     return text
                 }
@@ -85,16 +92,16 @@
                     let sseBody = JSON.parse(event.data);
                     let block = sseBody["block"];
                     if (block === "citation") {
-                        let citationList = [];
+                        let citationStrList = [];
                         let citations = sseBody["data"];
                         for (const citation of citations) {
                             let i = citation["i"];
                             let link = citation["link"];
                             let title = citation["title"];
-                            citationList.push(i + ". [" + title + "](" + link + ")");
-                            citationLinkList.push(link);
+                            citationStrList.push(i + ". " + aLink(title, link));
+                            citationList.push(citation);
                         }
-                        responseBlock[block] = citationList.join("\n");
+                        responseBlock[block] = citationStrList.join("\n");
                     } else {
                         responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
                     }
@@ -110,7 +117,7 @@
                 };
 
                 eventSource.onerror = function (error) {
-                    console.error("EventSource failed:", error);
+                    console.error(error);
                     eventSource.close();
                 };
             } else {
