@@ -1,10 +1,10 @@
 # Open AI Search
 
+> This project is still under heavy development.
+
 Open AI Search, inspired by perplexity and metaso.
 
 ## Usage
-
-> This project using [duckduckgo](https://duckduckgo.com) as search engine, please ensure that you can access it.
 
 ```shell
 cp config.example.py config.py

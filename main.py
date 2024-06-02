@@ -9,7 +9,8 @@ from fastapi.responses import JSONResponse, Response, HTMLResponse
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
-from config import WORKERS, PORT
+from config import WORKERS, PORT, BING_SEARCH_BASE_URL
+from open_ai_search.search_engine import Bing
 from open_ai_search.rag import RAG
 
 
@@ -24,7 +25,7 @@ home_html: str = ...
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global rag, home_html
-    rag = RAG()
+    rag = RAG(Bing(BING_SEARCH_BASE_URL))
     with open("resource/www/index.html", "r") as f:
         home_html = f.read()
     yield
@@ -53,8 +54,8 @@ async def exception_handler(_: Request, e: Exception) -> Response:
     )
 
 
-def stream(q: str, region: str, max_results: int) -> AsyncIterable:
-    for response in rag.search(q, region, max_results):
+def stream(q: str, max_results: int) -> AsyncIterable:
+    for response in rag.search(q):
         yield json.dumps(
             response,
             ensure_ascii=False,
@@ -66,10 +67,9 @@ def stream(q: str, region: str, max_results: int) -> AsyncIterable:
 @app.get("/api/ai-search", response_model=Dict)
 async def search(
         q: str = Query(description="Search query"),
-        region: str = Query(description="Region of result", default="cn-zh"),
         max_results: int = Query(description="Max search result to use", default=30)
 ):
-    return EventSourceResponse(stream(q, region, max_results))
+    return EventSourceResponse(stream(q, max_results))
 
 
 @app.get("/", response_class=HTMLResponse)

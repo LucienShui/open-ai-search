@@ -1,0 +1,15 @@
+import unittest
+from open_ai_search.search_engine import Bing
+
+
+class BingSearchTestCase(unittest.TestCase):
+    def search(self, base_url: str = None):
+        b = Bing(base_url=base_url)
+        result = b.search("魏则西事件")
+        self.assertGreater(len(result), 0)
+
+    def test_bing_search(self):
+        self.search()
+
+    def test_cn_bing_search(self):
+        self.search(base_url="https://cn.bing.com")

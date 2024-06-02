@@ -1,27 +1,20 @@
 import os
 from functools import partial
-from typing import Optional, List, Iterable, Dict, Union
+from typing import List, Iterable, Dict, Union
+from open_ai_search.entity import Retrieval
 
 from duckduckgo_search import DDGS
 from openai import OpenAI
-from pydantic import BaseModel, Field
 
 from config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL_NAME
 from open_ai_search.iterator_tool import merge_iterators
-
-
-class Retrieval(BaseModel):
-    title: str = Field(description="Title")
-    link: str = Field(description="URL", alias="href")
-    snippet: str = Field(description="Summary from search engine", alias="body")
-    content: Optional[str] = Field(description="Full content", default=None)
-    record_date: Optional[str] = Field(description="Record data", default=None)
+from open_ai_search.search_engine import SearchEngine
 
 
 class RAG:
 
-    def __init__(self):
-        self.search_engine: DDGS = DDGS()
+    def __init__(self, search_engine: SearchEngine):
+        self.search_engine: SearchEngine = search_engine
         self.client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)
         self.chat = partial(self.client.chat.completions.create, model=OPENAI_MODEL_NAME)
 
@@ -60,9 +53,8 @@ class RAG:
         ]
         return messages
 
-    def search(self, query: str, region: str = "cn-zh", max_results: int = 10) -> Iterable[Dict[str, Union[str, Dict]]]:
-        search_result_list: List[Dict] = self.search_engine.text(query, region=region, max_results=max_results)
-        retrival_list: List[Retrieval] = [Retrieval(**result) for result in search_result_list]
+    def search(self, query: str) -> Iterable[Dict[str, Union[str, Dict]]]:
+        retrival_list: List[Retrieval] = self.search_engine.search(query)
         iterator = merge_iterators([
             self.chat(messages=self.messages_prepare(query, prompt, retrival_list), stream=True)
             for prompt in self.prompt_dict.values()
