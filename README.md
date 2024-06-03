@@ -14,4 +14,7 @@ python3 main.py
 
 Then open `http://localhost:8000` by default.
 
+## Demo Video
 
++ [Bilibili](https://www.bilibili.com/video/BV1zs421M7ce/)
++ [Youtube](https://youtu.be/Jp2qUYLb3K0)
