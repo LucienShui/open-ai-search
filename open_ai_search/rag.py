@@ -49,8 +49,8 @@ class RAG:
             ]
             if retrieval.content:
                 prompt_list.append(f"Content: {retrieval.content}")
-            if retrieval.record_date:
-                prompt_list.append(f"Record date: {retrieval.record_date}")
+            if retrieval.date:
+                prompt_list.append(f"Record date: {retrieval.date}")
             retrival_prompt_list.append("\n".join(prompt_list))
         return "\n\n".join(retrival_prompt_list)
 
@@ -66,8 +66,7 @@ class RAG:
         retrival_list: List[Retrieval] = self.search_engine.search(query)
         assert len(retrival_list) > 0, "Empty retrieval result"
 
-        citations: List[Dict[str, Any]] = [{"i": i + 1, "title": retrieval.title, "link": retrieval.link}
-                                           for i, retrieval in enumerate(retrival_list)]
+        citations: List[Dict[str, Any]] = [r.to_citation_dict(i + 1) for i, r in enumerate(retrival_list)]
         yield {
             "block": "citation",
             "data": citations

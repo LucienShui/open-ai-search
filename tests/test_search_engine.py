@@ -5,7 +5,7 @@ from open_ai_search.search_engine import Bing
 class BingSearchTestCase(unittest.TestCase):
     def search(self, base_url: str = None):
         b = Bing(base_url=base_url)
-        result = b.search("魏则西事件")
+        result = b.search("周杰伦最近有哪几场演唱会？")
         self.assertGreater(len(result), 0)
 
     def test_bing_search(self):

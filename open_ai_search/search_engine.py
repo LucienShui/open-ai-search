@@ -17,19 +17,33 @@ class Bing(SearchEngine):
         self.headers: dict = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:84.0) Gecko/20100101 Firefox/84.0"
         }
+        self.date_sep: str = " · "
+
+    @classmethod
+    def _prettify(cls, text: str) -> str:
+        return text.replace('\xa0', ' ')
 
     def search(self, query: str, *args, **kwargs) -> List[Retrieval]:
         url: str = urljoin(self.base_url, 'search')
-        response: requests.Response = requests.get(url, params={"q": query}, headers=self.headers, allow_redirects=True)
+        response: requests.Response = requests.get(url, params={"q": query}, headers=self.headers)
         response.raise_for_status()
         soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
         retrieval_list: List[Retrieval] = []
         for result in soup.find_all('li', attrs={"class": "b_algo"}):
             result: Tag
-            title: str = result.find("h2").text
-            link: str = result.find("a", attrs={"class": "tilk"})["href"]
-            snippet = ""
+            retrieval_dict = {
+                "title": result.find("h2").text,
+                "link": result.find("a", attrs={"class": "tilk"})["href"]
+            }
             if p := result.find("p"):
-                snippet = p.text
-            retrieval_list.append(Retrieval(title=title, link=link, snippet=snippet))
+                [each.decompose() for each in p.find_all("span", attrs={"class": "algoSlug_icon"})]
+                snippet = p.text.strip().replace('\xa0', ' ')
+                if self.date_sep in snippet:
+                    date = snippet.split(self.date_sep)[0].strip()
+                    retrieval_dict["snippet"] = snippet.lstrip(date).strip()
+                    retrieval_dict["date"] = date
+                else:
+                    retrieval_dict["snippet"] = snippet.strip()
+
+            retrieval_list.append(Retrieval.model_validate(retrieval_dict))
         return retrieval_list
