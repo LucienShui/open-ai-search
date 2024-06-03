@@ -43,12 +43,15 @@
 <body>
 <h1>Open AI Search</h1>
 <div>
-    <label>
-        Query:
-        <input type="text" name="query" id="query">
-    </label>
-    <input type="submit" value="Submit" id="submit">
+    <form id="search-form" action="#">
+        <label>
+            Query:
+            <input type="text" id="query">
+        </label>
+        <input type="submit" value="Submit">
+    </form>
 </div>
+<div id="info"></div>
 
 <div class="container">
     <div id="content"></div>
@@ -68,24 +71,25 @@
         const content = document.getElementById("content");
         const summary = document.getElementById("summary");
 
-        document.getElementById("submit").onclick = function submit() {
+        document.getElementById("search-form").onsubmit = function (e) {
+            e.preventDefault();
             if (typeof (EventSource) !== "undefined") {
                 const eventSource = new EventSource("/api/ai-search?q=" + document.getElementById("query").value);
                 let responseBlock = {
                     "qa": "",
                     "summary": "",
                     "related_question": "",
-                    "table": "",
+                    "entity": "",
                     "citation": ""
                 }
                 let blockHeader = {
                     "qa": "## Answer",
                     "summary": "## Summary",
-                    "table": "## Related entity",
+                    "entity": "## Related entity",
                     "related_question": "## Related question",
                     "citation": "## Citations"
                 }
-                let keysOrder = ["qa", "related_question", "table", "citation"]
+                let keysOrder = ["qa", "related_question", "entity", "citation"]
                 let citationList = [];
 
                 function replace_citation(text) {
@@ -114,6 +118,7 @@
                             citationList.push(citation);
                         }
                         responseBlock[block] = citationStrList.join("\n");
+                        document.getElementById("info").innerHTML = "<p>Found " + citationList.length + " results</p>"
                     } else {
                         responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
                     }
@@ -135,7 +140,7 @@
             } else {
                 content.textContent = "Sorry, your browser does not support Server-Sent Events.";
             }
-        }
+        };
     });
 </script>
 </html>

@@ -23,7 +23,7 @@ class Bing(SearchEngine):
         response: requests.Response = requests.get(url, params={"q": query}, headers=self.headers, allow_redirects=True)
         response.raise_for_status()
         soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
-        retrival_list: List[Retrieval] = []
+        retrieval_list: List[Retrieval] = []
         for result in soup.find_all('li', attrs={"class": "b_algo"}):
             result: Tag
             title: str = result.find("h2").text
@@ -31,5 +31,5 @@ class Bing(SearchEngine):
             snippet = ""
             if p := result.find("p"):
                 snippet = p.text
-            retrival_list.append(Retrieval(title=title, link=link, snippet=snippet))
-        return retrival_list
+            retrieval_list.append(Retrieval(title=title, link=link, snippet=snippet))
+        return retrieval_list

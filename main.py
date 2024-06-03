@@ -72,6 +72,11 @@ async def search(
     return EventSourceResponse(stream(q, max_results))
 
 
+@app.get("/api/health")
+async def healthcheck():
+    return {"status": 200}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return HTMLResponse(content=home_html, status_code=200)
