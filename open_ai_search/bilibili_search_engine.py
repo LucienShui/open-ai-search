@@ -10,17 +10,18 @@ class BilibiliSearchEngine(SearchEngine):
     def __init__(self):
         super().__init__()
 
-    def _sync_search(self, keyword, page=1):
+    @staticmethod
+    def _sync_search(keyword, page=1):
         return asyncio.run(search.search_by_type(keyword, search_type=search.SearchObjectType.VIDEO,
-                                     video_zone_type=None,
-                                     order_type=search.OrderVideo.PUBDATE, page=page,
-                                     debug_param_func=print))
+                                                 video_zone_type=None,
+                                                 order_type=search.OrderVideo.PUBDATE, page=page,
+                                                 debug_param_func=print))
 
     def search(self, query: str, *args, **kwargs) -> List[Retrieval]:
         page_num = 1
         items = []
-        for i in range(1, page_num+1):
-            resp = self._sync_search(query, page=i)
+        for i in range(page_num):
+            resp = self._sync_search(query, page=i + 1)
             items.extend(resp["result"])
 
         retrival_list: List[Retrieval] = []
@@ -30,4 +31,3 @@ class BilibiliSearchEngine(SearchEngine):
             snippet = item["description"]
             retrival_list.append(Retrieval(title=title, link=link, snippet=snippet))
         return retrival_list
-
