@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
 from config import WORKERS, PORT, BING_SEARCH_BASE_URL
-from open_ai_search.search_engine import Bing
+from open_ai_search.search_engine import BingSearchEngine
 from open_ai_search.rag import RAG
 
 
@@ -25,7 +25,7 @@ home_html: str = ...
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global rag, home_html
-    rag = RAG(Bing(BING_SEARCH_BASE_URL))
+    rag = RAG([BingSearchEngine(BING_SEARCH_BASE_URL)])
     with open("resource/www/index.html", "r") as f:
         home_html = f.read()
     yield

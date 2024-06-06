@@ -1,7 +1,7 @@
 pydantic~=2.7.1
 fastapi~=0.111.0
 uvicorn~=0.30.0
-requests~=2.32.2
+requests~=2.31.0
 openai~=1.30.4
 sse-starlette~=2.1.0
 beautifulsoup4~=4.12.3

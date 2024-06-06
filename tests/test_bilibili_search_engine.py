@@ -1,5 +1,5 @@
 import unittest
-from open_ai_search.bilibili_search_engine import BilibiliSearchEngine
+from open_ai_search.search_engine.bilibili_search_engine import BilibiliSearchEngine
 
 
 class BilibiliSearchEngineTestCase(unittest.TestCase):

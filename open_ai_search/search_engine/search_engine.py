@@ -3,25 +3,17 @@ from typing import List, Optional
 from open_ai_search.entity import Retrieval
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
+from open_ai_search.search_engine import SearchEngine
 
 
-class SearchEngine:
-    def search(self, query: str, *args, **kwargs) -> List[Retrieval]:
-        raise NotImplementedError
-
-
-class Bing(SearchEngine):
+class BingSearchEngine(SearchEngine):
 
     def __init__(self, base_url: Optional[str] = None):
         self.base_url: str = base_url or "https://www.bing.com"
         self.headers: dict = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:84.0) Gecko/20100101 Firefox/84.0"
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         }
         self.date_sep: str = " · "
-
-    @classmethod
-    def _prettify(cls, text: str) -> str:
-        return text.replace('\xa0', ' ')
 
     def search(self, query: str, *args, **kwargs) -> List[Retrieval]:
         url: str = urljoin(self.base_url, 'search')
@@ -44,6 +36,7 @@ class Bing(SearchEngine):
                     retrieval_dict["date"] = date
                 else:
                     retrieval_dict["snippet"] = snippet.strip()
+                retrieval_dict["source"] = "bing"
 
             retrieval_list.append(Retrieval.model_validate(retrieval_dict))
         return retrieval_list
