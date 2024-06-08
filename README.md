@@ -16,6 +16,10 @@ Then open `http://localhost:8000` by default.
 
 ## Demo
 
+> Using free `gpt-3.5-turbo` from [GPT_API_free](https://github.com/chatanywhere/GPT_API_free).  
+Maybe you need to wait for the first response token up to 10 seconds.  
+Deploy with your own openai api would be faster.
+
 [open-ai-search.hub.lucien.ink:2016](https://open-ai-search.hub.lucien.ink:2016)
 
 ## Video
