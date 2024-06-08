@@ -84,7 +84,8 @@ class RAG:
         ])
 
         for idx, response in iterator:
-            yield {
-                "block": list(self.prompt_filename.keys())[idx],
-                "delta": response.choices[0].delta.content or ""
-            }
+            if delta := response.choices[0].delta.content:
+                yield {
+                    "block": list(self.prompt_filename.keys())[idx],
+                    "delta": delta
+                }

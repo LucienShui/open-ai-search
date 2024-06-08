@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, Response, HTMLResponse
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
-from config import WORKERS, PORT, BING_SEARCH_BASE_URL
+from config import WORKERS, PORT, BING_SEARCH_BASE_URL, BING_SEARCH_MAX_ANSWER_CNT
 from open_ai_search.search_engine import BingSearchEngine
 from open_ai_search.rag import RAG
 
@@ -25,7 +25,7 @@ home_html: str = ...
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global rag, home_html
-    rag = RAG([BingSearchEngine(BING_SEARCH_BASE_URL)])
+    rag = RAG([BingSearchEngine(BING_SEARCH_BASE_URL, BING_SEARCH_MAX_ANSWER_CNT)])
     with open("resource/www/index.html", "r") as f:
         home_html = f.read()
     yield
@@ -56,11 +56,7 @@ async def exception_handler(_: Request, e: Exception) -> Response:
 
 def stream(q: str, max_results: int) -> AsyncIterable:
     for response in rag.search(q):
-        yield json.dumps(
-            response,
-            ensure_ascii=False,
-            separators=(',', ':')
-        )
+        yield json.dumps(response, ensure_ascii=False, separators=(',', ':'))
     yield '[DONE]'
 
 
@@ -83,12 +79,7 @@ async def index():
 
 
 def main():
-    uvicorn.run(
-        'main:app',
-        host='0.0.0.0',
-        port=PORT,
-        workers=WORKERS
-    )
+    uvicorn.run('main:app', host='0.0.0.0', port=PORT, workers=WORKERS)
 
 
 if __name__ == '__main__':

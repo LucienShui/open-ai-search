@@ -14,7 +14,11 @@ python3 main.py
 
 Then open `http://localhost:8000` by default.
 
-## Demo Video
+## Demo
+
+[open-ai-search.hub.lucien.ink:2016](https://open-ai-search.hub.lucien.ink:2016)
+
+## Video
 
 + [Bilibili](https://www.bilibili.com/video/BV1zs421M7ce/)
 + [Youtube](https://youtu.be/Jp2qUYLb3K0)

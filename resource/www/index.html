@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown Renderer</title>
+    <title>Open AI Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -64,7 +64,7 @@
 <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
 <script>
     function aLink(title, link) {
-        return "<a href=\"" + link + "\" target=\"_blank\">" + title + "</a>"
+        return `<a href="${link}" target="_blank">${title}</a>`
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -77,7 +77,10 @@
         document.getElementById("search-form").onsubmit = function (e) {
             e.preventDefault();
             if (typeof (EventSource) !== "undefined") {
-                const eventSource = new EventSource("/api/ai-search?q=" + document.getElementById("query").value);
+                let params = new URLSearchParams({
+                    q: document.getElementById("query").value
+                });
+                const eventSource = new EventSource(`/api/ai-search?${params.toString()}`);
                 let responseBlock = {
                     "qa": "",
                     "summary": "",
@@ -97,8 +100,8 @@
 
                 function replace_citation(text) {
                     for (const citation of citationList) {
-                        let citeId = "[" + citation["i"] + "]"
-                        text = text.replace("[" + citeId + "]", aLink(citeId, citation["link"]));
+                        let citeId = `[${citation["i"]}]`
+                        text = text.replace(`[${citeId}]`, aLink(citeId, citation["link"]));
                     }
                     return text
                 }
@@ -121,7 +124,7 @@
                             citationList.push(citation);
                         }
                         responseBlock[block] = citationStrList.join("\n");
-                        document.getElementById("info").innerHTML = "<p>Found " + citationList.length + " results</p>"
+                        document.getElementById("info").innerHTML = `<p>Found${citationList.length} results</p>`
                     } else {
                         responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
                     }
