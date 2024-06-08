@@ -20,7 +20,8 @@ class BingSearchEngine(SearchEngine):
         self.session = requests.session()
         self.headers: dict = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:84.0) Gecko/20100101 Firefox/84.0",
-            "Accept-Language": "en-US,en;q=0.6"
+            "Accept-Language": "en-US,en;q=0.6",
+            "Referer": self.base_url
         }
         self.space_pattern: re.Pattern = re.compile(f"[{''.join(spaces)}]")
 
@@ -35,10 +36,11 @@ class BingSearchEngine(SearchEngine):
         """
         retrieval_list: List[Retrieval] = []
         response: requests.Response = session.get(url)
-        self.session.headers['Referer'] = url
+        self.session.headers["Referer"] = url
         response.raise_for_status()
         soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
         result_list: List[Tag] = soup.find_all('li', attrs={"class": "b_algo"})
+        assert len(result_list) > 0, "No search result, maybe there is something wrong with bing."
         for result in result_list:
             retrieval_dict = {
                 "title": result.find("h2").text,

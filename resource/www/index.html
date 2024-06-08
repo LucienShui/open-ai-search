@@ -73,9 +73,15 @@
         });
         const content = document.getElementById("content");
         const summary = document.getElementById("summary");
+        const info = document.getElementById("info");
 
         document.getElementById("search-form").onsubmit = function (e) {
             e.preventDefault();
+
+            content.innerHTML = "";
+            summary.innerHTML = "";
+            info.innerHTML = "";
+
             if (typeof (EventSource) !== "undefined") {
                 let params = new URLSearchParams({
                     q: document.getElementById("query").value
@@ -112,6 +118,12 @@
                         return;
                     }
                     let sseBody = JSON.parse(event.data);
+                    if ("error" in sseBody) {
+                        eventSource.close();
+                        let message = sseBody["error"];
+                        info.innerHTML = `error: ${message}`;
+                        return;
+                    }
                     let block = sseBody["block"];
                     if (block === "citation") {
                         let citationStrList = [];
@@ -124,7 +136,7 @@
                             citationList.push(citation);
                         }
                         responseBlock[block] = citationStrList.join("\n");
-                        document.getElementById("info").innerHTML = `<p>Found${citationList.length} results</p>`
+                        info.innerHTML = `<p>Found${citationList.length} results</p>`
                     } else {
                         responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
                     }

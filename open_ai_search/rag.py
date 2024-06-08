@@ -66,26 +66,31 @@ class RAG:
         return messages
 
     def search(self, query: str) -> Iterable[Dict[str, Union[str, Dict]]]:
-        retrieval_list: List[Retrieval] = sum(self.pool.map(lambda x: x.search(query), self.search_engine_list), [])
-        assert len(retrieval_list) > 0, "Empty retrieval result"
+        try:
+            retrieval_list: List[Retrieval] = sum(self.pool.map(lambda x: x.search(query), self.search_engine_list), [])
+            assert len(retrieval_list) > 0, "Empty retrieval result"
 
-        citations: List[Dict[str, Any]] = [{
-            "i": i + 1, **r.model_dump(exclude={"snippet", "content"})
-        } for i, r in enumerate(retrieval_list)]
-        yield {
-            "block": "citation",
-            "data": citations
-        }
+            citations: List[Dict[str, Any]] = [{
+                "i": i + 1, **r.model_dump(exclude={"snippet", "content"})
+            } for i, r in enumerate(retrieval_list)]
+            yield {
+                "block": "citation",
+                "data": citations
+            }
 
-        lang: str = self.lang_detector(query)
-        iterator: Iterable[Dict] = merge_iterators([
-            self.chat(messages=self.messages_prepare(query, prompt, retrieval_list), stream=True)
-            for prompt in self.prompt_dict[lang].values()
-        ])
+            lang: str = self.lang_detector(query)
+            iterator: Iterable[Dict] = merge_iterators([
+                self.chat(messages=self.messages_prepare(query, prompt, retrieval_list), stream=True)
+                for prompt in self.prompt_dict[lang].values()
+            ])
 
-        for idx, response in iterator:
-            if delta := response.choices[0].delta.content:
-                yield {
-                    "block": list(self.prompt_filename.keys())[idx],
-                    "delta": delta
-                }
+            for idx, response in iterator:
+                if delta := response.choices[0].delta.content:
+                    yield {
+                        "block": list(self.prompt_filename.keys())[idx],
+                        "delta": delta
+                    }
+        except Exception as e:
+            yield {
+                "error": str(e)
+            }
