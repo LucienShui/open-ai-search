@@ -136,7 +136,7 @@
                             citationList.push(citation);
                         }
                         responseBlock[block] = citationStrList.join("\n");
-                        info.innerHTML = `<p>Found${citationList.length} results</p>`
+                        info.innerHTML = `<p>Found ${citationList.length} results</p>`
                     } else {
                         responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
                     }
