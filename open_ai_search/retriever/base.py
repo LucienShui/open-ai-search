@@ -28,7 +28,7 @@ class SearchEngineScraperBase(RetrieverBase):
         :param session: requests session
         :param url: url to get
         :param max_result_cnt: max retrieval to return
-        :return: List[Retrival], next page url (if exceed max_answer_cnt, return None instead of url)
+        :return: List[Retrival], next page url (if exceed max_result_cnt, return None instead of url)
         """
         raise NotImplementedError
 

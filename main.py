@@ -9,9 +9,9 @@ from fastapi.responses import JSONResponse, Response, HTMLResponse
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
-from config import WORKERS, PORT, BING_SEARCH_BASE_URL, BING_SEARCH_MAX_ANSWER_CNT
 from open_ai_search.retriever import Bing
 from open_ai_search.rag import RAG
+from open_ai_search.config import config
 
 
 class SearchRequest(BaseModel):
@@ -25,7 +25,7 @@ home_html: str = ...
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global rag, home_html
-    rag = RAG([Bing(BING_SEARCH_BASE_URL, BING_SEARCH_MAX_ANSWER_CNT)])
+    rag = RAG([Bing(config.bing_search_base_url, config.bing_search_max_result_cnt)])
     with open("resource/www/index.html", "r") as f:
         home_html = f.read()
     yield
@@ -79,7 +79,7 @@ async def index():
 
 
 def main():
-    uvicorn.run('main:app', host='0.0.0.0', port=PORT, workers=WORKERS)
+    uvicorn.run('main:app', host='0.0.0.0', port=config.port, workers=config.workers)
 
 
 if __name__ == '__main__':

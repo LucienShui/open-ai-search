@@ -7,7 +7,7 @@ Open AI Search, inspired by perplexity and metaso.
 ## Usage
 
 ```shell
-cp config.example.py config.py
+cp config.example.yaml config.yaml
 pip install -r requirements.txt
 python3 main.py
 ```

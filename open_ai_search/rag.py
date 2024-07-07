@@ -1,15 +1,15 @@
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import List, Iterable, Dict, Union, Any
 
 from openai import OpenAI
 
-from config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL_NAME
+from open_ai_search.config import config
 from open_ai_search.entity import Retrieval
 from open_ai_search.iterator_tool import merge_iterators
 from open_ai_search.retriever import RetrieverBase
-from concurrent.futures import ThreadPoolExecutor
 
 
 class RAG:
@@ -18,8 +18,8 @@ class RAG:
         self.retriever_list: List[RetrieverBase] = search_engine_list
         self.pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=len(self.retriever_list))
 
-        self.client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)
-        self.chat = partial(self.client.chat.completions.create, model=OPENAI_MODEL_NAME)
+        self.client = OpenAI(base_url=config.openai_base_url, api_key=config.openai_api_key)
+        self.chat = partial(self.client.chat.completions.create, model=config.openai_model)
 
         prompt_base_dir = "resource/prompt"
         self.prompt_filename: Dict[str, str] = {
