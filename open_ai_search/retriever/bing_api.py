@@ -7,6 +7,7 @@ import requests
 from open_ai_search.config import config
 from open_ai_search.entity import Retrieval
 from open_ai_search.retriever import RetrieverBase
+import re
 
 
 # https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
@@ -20,6 +21,7 @@ class BingAPI(RetrieverBase):
             "textDecorations": True,
             "textFormat": "HTML",
         }
+        self.bold_pattern: re.Pattern = re.compile(r'</?b>')
 
     @staticmethod
     def date_formatter(date: str) -> Optional[str]:
@@ -33,7 +35,7 @@ class BingAPI(RetrieverBase):
         response.raise_for_status()
         return [
             Retrieval(
-                title=web_page["name"], link=web_page["url"], snippet=web_page["snippet"], source="bing_api",
-                date=self.date_formatter(web_page.get("dateLastCrawled", "")), author=web_page.get("siteName", None)
-            ) for web_page in response.json()["webPages"]["value"]
+                title=self.bold_pattern.sub('', web_page["name"]), link=web_page["url"], snippet=web_page["snippet"],
+                source="bing_api", date=self.date_formatter(web_page.get("dateLastCrawled", "")),
+                author=web_page.get("siteName", None)) for web_page in response.json()["webPages"]["value"]
         ]
