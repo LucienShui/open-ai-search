@@ -6,3 +6,4 @@ openai~=1.30.4
 sse-starlette~=2.1.0
 beautifulsoup4~=4.12.3
 bilibili-api-python~=16.2.0
+pytest~=8.2.2

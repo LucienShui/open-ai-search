@@ -9,3 +9,5 @@ class Retrieval(BaseModel):
     source: str = Field(description="Source of retrival")
     content: Optional[str] = Field(description="Full content", default=None)
     date: Optional[str] = Field(description="Scraped date", default=None)
+    icon_url: Optional[str] = Field(description="Scraped icon", default=None)
+    author: Optional[str] = Field(description="Author", default=None)

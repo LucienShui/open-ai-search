@@ -3,10 +3,10 @@ import asyncio
 
 from typing import List
 from open_ai_search.entity import Retrieval
-from open_ai_search.search_engine import SearchEngine
+from open_ai_search.retriever import RetrieverBase
 
 
-class BilibiliSearchEngine(SearchEngine):
+class Bilibili(RetrieverBase):
     def __init__(self):
         super().__init__()
 

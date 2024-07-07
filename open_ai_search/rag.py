@@ -8,15 +8,15 @@ from openai import OpenAI
 from config import OPENAI_BASE_URL, OPENAI_API_KEY, OPENAI_MODEL_NAME
 from open_ai_search.entity import Retrieval
 from open_ai_search.iterator_tool import merge_iterators
-from open_ai_search.search_engine import SearchEngine
+from open_ai_search.retriever import RetrieverBase
 from concurrent.futures import ThreadPoolExecutor
 
 
 class RAG:
 
-    def __init__(self, search_engine_list: List[SearchEngine]):
-        self.search_engine_list: List[SearchEngine] = search_engine_list
-        self.pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=len(self.search_engine_list))
+    def __init__(self, search_engine_list: List[RetrieverBase]):
+        self.retriever_list: List[RetrieverBase] = search_engine_list
+        self.pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=len(self.retriever_list))
 
         self.client = OpenAI(base_url=OPENAI_BASE_URL, api_key=OPENAI_API_KEY)
         self.chat = partial(self.client.chat.completions.create, model=OPENAI_MODEL_NAME)
@@ -67,7 +67,7 @@ class RAG:
 
     def search(self, query: str) -> Iterable[Dict[str, Union[str, Dict]]]:
         try:
-            retrieval_list: List[Retrieval] = sum(self.pool.map(lambda x: x.search(query), self.search_engine_list), [])
+            retrieval_list: List[Retrieval] = sum(self.pool.map(lambda x: x.search(query), self.retriever_list), [])
             assert len(retrieval_list) > 0, "Empty retrieval result"
 
             citations: List[Dict[str, Any]] = [{
