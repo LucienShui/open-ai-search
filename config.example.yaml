@@ -7,3 +7,6 @@ openai_base_url: "https://api.openai.com/v1"
 
 bing_search_base_url: "https://www.bing.com"  # https://cn.bing.com
 bing_search_max_result_cnt: 20
+
+bing_api_subscription_key: "***"
+bing_api_mkt:  # https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/market-codes

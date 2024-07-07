@@ -8,3 +8,4 @@ beautifulsoup4~=4.12.3
 bilibili-api-python~=16.2.0
 pytest~=8.2.2
 pyyaml~=6.0.1
+python-dateutil~=2.9.0.post0

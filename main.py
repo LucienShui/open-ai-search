@@ -9,9 +9,9 @@ from fastapi.responses import JSONResponse, Response, HTMLResponse
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
-from open_ai_search.retriever import Bing
-from open_ai_search.rag import RAG
 from open_ai_search.config import config
+from open_ai_search.rag import RAG
+from open_ai_search.retriever import BingScraper, BingAPI, FallbackRetriever
 
 
 class SearchRequest(BaseModel):
@@ -25,7 +25,12 @@ home_html: str = ...
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global rag, home_html
-    rag = RAG([Bing(config.bing_search_base_url, config.bing_search_max_result_cnt)])
+
+    bing_scraper = BingScraper(config.bing_search_base_url, config.bing_search_max_result_cnt)
+    bing_api = BingAPI()
+    bing = FallbackRetriever([bing_scraper, bing_api])
+
+    rag = RAG([bing])
     with open("resource/www/index.html", "r") as f:
         home_html = f.read()
     yield

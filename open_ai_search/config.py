@@ -17,6 +17,9 @@ class Config(BaseModel):
     bing_search_base_url: str = Field(default="https://www.bing.com")
     bing_search_max_result_cnt: int = Field(default=20)
 
+    bing_api_subscription_key: str = Field()
+    bing_api_mkt: str = Field(default=None)
+
 
 def load_from_config_file(yaml_path: str = "config.yaml") -> Dict[str, str]:
     if os.path.exists(yaml_path):

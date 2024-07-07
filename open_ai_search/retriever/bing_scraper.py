@@ -12,7 +12,7 @@ from open_ai_search.retriever import SearchEngineScraperBase
 spaces: List[str] = [char for code_point in range(0x110000) if ch_cate(char := chr(code_point)) in ['Zs', 'Zl', 'Zp']]
 
 
-class Bing(SearchEngineScraperBase):
+class BingScraper(SearchEngineScraperBase):
     def __init__(self, base_url: Optional[str] = None, max_result_cnt: Optional[int] = None):
         super().__init__(max_result_cnt)
         self.base_url: str = base_url or "https://www.bing.com"
