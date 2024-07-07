@@ -4,7 +4,10 @@ from typing import List, Tuple, Optional
 
 
 class RetrieverBase:
-    def search(self, query: str, max_result_cnt: Optional[int], *args, **kwargs) -> List[Retrieval]:
+    def __init__(self, max_result_cnt: Optional[int] = None):
+        self.max_result_cnt: Optional[int] = max_result_cnt or 10
+
+    def search(self, query: str, max_result_cnt: Optional[int] = None, *args, **kwargs) -> List[Retrieval]:
         raise NotImplementedError
 
 
@@ -14,9 +17,6 @@ class SearchEngineScraperBase(RetrieverBase):
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:84.0) Gecko/20100101 Firefox/84.0",
         "Accept-Language": "en-US,en;q=0.6",
     }
-
-    def __init__(self, max_result_cnt: Optional[int] = None):
-        self.max_result_cnt: int = max_result_cnt or 10
 
     def generate_url(self, query: str) -> str:
         raise NotImplementedError

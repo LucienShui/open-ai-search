@@ -12,7 +12,8 @@ from open_ai_search.retriever import RetrieverBase
 # https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
 class BingAPI(RetrieverBase):
 
-    def __init__(self):
+    def __init__(self, max_result_cnt: Optional[int] = None):
+        super().__init__(max_result_cnt)
         self.header = {"Ocp-Apim-Subscription-Key": config.bing_api_subscription_key}
         self.params = {
             "mkt": config.bing_api_mkt,
@@ -26,8 +27,8 @@ class BingAPI(RetrieverBase):
             return dateutil.parser.parse(date).astimezone(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
         return None
 
-    def search(self, query: str, max_result_cnt: Optional[int], *args, **kwargs) -> List[Retrieval]:
-        params: Dict[str, Any] = {**self.params, "q": query, "count": max_result_cnt}
+    def search(self, query: str, max_result_cnt: Optional[int] = None, *args, **kwargs) -> List[Retrieval]:
+        params: Dict[str, Any] = {**self.params, "q": query, "count": max_result_cnt or self.max_result_cnt}
         response = requests.get("https://api.bing.microsoft.com/v7.0/search", headers=self.header, params=params)
         response.raise_for_status()
         return [
