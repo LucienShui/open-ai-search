@@ -1,25 +1,24 @@
+import asyncio
 import os
 import re
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
-from typing import List, Iterable, Dict, Union, Any
+from typing import List, Dict, Union, Any, AsyncIterable
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
-from open_ai_search.config import config
+from open_ai_search.common.async_parallel_iterator import AsyncParallelIterator
+from open_ai_search.common.trace_info import TraceInfo
+from open_ai_search.config import OpenAIConfig
 from open_ai_search.entity import Retrieval
-from open_ai_search.iterator_tool import merge_iterators
-from open_ai_search.retriever import RetrieverBase
+from open_ai_search.retriever.base import RetrieverBase
 
 
 class RAG:
 
-    def __init__(self, search_engine_list: List[RetrieverBase]):
+    def __init__(self, search_engine_list: List[RetrieverBase], config: OpenAIConfig):
         self.retriever_list: List[RetrieverBase] = search_engine_list
-        self.pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=len(self.retriever_list))
 
-        self.client = OpenAI(base_url=config.openai_base_url, api_key=config.openai_api_key)
-        self.chat = partial(self.client.chat.completions.create, model=config.openai_model)
+        self.client = AsyncOpenAI(base_url=config.base_url, api_key=config.api_key)
+        self.model = config.model
 
         prompt_base_dir = "resource/prompt"
         self.prompt_filename: Dict[str, str] = {
@@ -43,18 +42,10 @@ class RAG:
 
     @classmethod
     def build_context(cls, retrieval_list: List[Retrieval]) -> str:
-        retrival_prompt_list: List[str] = []
-        for i, retrieval in enumerate(retrieval_list):
-            prompt_list: List[str] = [
-                f"[[{i + 1}]]",
-                f"Title: {retrieval.title}",
-                f"Snippet: {retrieval.snippet}"
-            ]
-            if retrieval.content:
-                prompt_list.append(f"Content: {retrieval.content}")
-            if retrieval.date:
-                prompt_list.append(f"Record date: {retrieval.date}")
-            retrival_prompt_list.append("\n".join(prompt_list))
+        retrival_prompt_list: List[str] = [
+            "\n".join([f"[[{i + 1}]]", retrieval.to_prompt()])
+            for i, retrieval in enumerate(retrieval_list)
+        ]
         return "\n\n".join(retrival_prompt_list)
 
     def messages_prepare(self, query: str, template: str, retrieval_list: List[Retrieval]) -> List[dict]:
@@ -65,32 +56,30 @@ class RAG:
         ]
         return messages
 
-    def search(self, query: str) -> Iterable[Dict[str, Union[str, Dict]]]:
+    async def search(self, query: str, max_results: int, trace_info: TraceInfo) -> AsyncIterable[Dict[str, Union[str, Dict]]]:
         try:
-            retrieval_list: List[Retrieval] = sum(self.pool.map(lambda x: x.search(query), self.retriever_list), [])
+            retrieval_list: List[Retrieval] = sum(await asyncio.gather(*(
+                retriever.search(query, max_results)
+                for retriever in self.retriever_list
+            )), [])
+            trace_info.info({"retrieval_cnt": len(retrieval_list)})
             assert len(retrieval_list) > 0, "Empty retrieval result"
 
             citations: List[Dict[str, Any]] = [{
                 "i": i + 1, **r.model_dump(exclude={"snippet", "content"})
             } for i, r in enumerate(retrieval_list)]
-            yield {
-                "block": "citation",
-                "data": citations
-            }
+            yield {"block": "citation", "data": citations}
 
             lang: str = self.lang_detector(query)
-            iterator: Iterable[Dict] = merge_iterators([
-                self.chat(messages=self.messages_prepare(query, prompt, retrieval_list), stream=True)
-                for prompt in self.prompt_dict[lang].values()
-            ])
 
-            for idx, response in iterator:
+            async_iter = AsyncParallelIterator({
+                key: await self.client.chat.completions.create(
+                    model=self.model, messages=self.messages_prepare(query, prompt, retrieval_list), stream=True
+                ) for key, prompt in self.prompt_dict[lang].items()
+            })
+
+            async for name, response in async_iter:
                 if delta := response.choices[0].delta.content:
-                    yield {
-                        "block": list(self.prompt_filename.keys())[idx],
-                        "delta": delta
-                    }
+                    yield {"block": name, "delta": delta}
         except Exception as e:
-            yield {
-                "error": str(e)
-            }
+            yield {"error": str(e)}

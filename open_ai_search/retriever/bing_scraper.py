@@ -13,14 +13,14 @@ spaces: List[str] = [char for code_point in range(0x110000) if ch_cate(char := c
 
 
 class BingScraper(SearchEngineScraperBase):
-    def __init__(self, base_url: Optional[str] = None, max_result_cnt: Optional[int] = None):
-        super().__init__(max_result_cnt)
+    def __init__(self, base_url: Optional[str] = None, max_results: Optional[int] = None):
+        super().__init__(max_results)
         self.base_url: str = base_url or "https://www.bing.com"
         self.date_sep: str = " · "
         self.space_pattern: re.Pattern = re.compile(f"[{''.join(spaces)}]")
 
     def parse_one_page(self, session: requests.Session, url: str,
-                       max_result_cnt: int) -> Tuple[List[Retrieval], Optional[str]]:
+                       max_results: int) -> Tuple[List[Retrieval], Optional[str]]:
         retrieval_list: List[Retrieval] = []
         response: requests.Response = session.get(url)
         session.headers["Referer"] = url
@@ -44,7 +44,7 @@ class BingScraper(SearchEngineScraperBase):
                     retrieval_dict["snippet"] = snippet.strip()
                 retrieval_dict["source"] = "bing"
                 retrieval_list.append(Retrieval.model_validate(retrieval_dict))
-            if len(retrieval_list) >= max_result_cnt:
+            if len(retrieval_list) >= max_results:
                 return retrieval_list, None
         url = urljoin(self.base_url, soup.select_one('div#b_content nav[role="navigation"] a.sb_pagN')["href"])
         return retrieval_list, url

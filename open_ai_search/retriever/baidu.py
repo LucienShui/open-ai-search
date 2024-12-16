@@ -21,7 +21,7 @@ class Baidu(SearchEngineScraperBase):
         return url
 
     def parse_one_page(self, session: requests.Session, url: str,
-                       max_result_cnt: int) -> Tuple[List[Retrieval], Optional[str]]:
+                       max_results: int) -> Tuple[List[Retrieval], Optional[str]]:
         retrieval_list: List[Retrieval] = []
         response: requests.Response = session.get(url)
         session.headers["Referer"] = url
@@ -45,7 +45,7 @@ class Baidu(SearchEngineScraperBase):
             if dom := result.find("span", attrs={"class": "c-color-gray"}):
                 retrieval.author = dom.get_text().strip()
             retrieval_list.append(retrieval)
-            if len(retrieval_list) == max_result_cnt:
+            if len(retrieval_list) == max_results:
                 return retrieval_list, None
 
         # Standardization

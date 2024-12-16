@@ -1,23 +1,27 @@
+import re
 from datetime import timezone, timedelta
 from typing import Optional, List, Dict, Any
 
 import dateutil.parser
 import requests
 
-from open_ai_search.config import config
 from open_ai_search.entity import Retrieval
-from open_ai_search.retriever import RetrieverBase
-import re
+from open_ai_search.retriever.base import RetrieverBase
 
 
 # https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
 class BingAPI(RetrieverBase):
 
-    def __init__(self, max_result_cnt: Optional[int] = None):
-        super().__init__(max_result_cnt)
-        self.header = {"Ocp-Apim-Subscription-Key": config.bing_api_subscription_key}
+    def __init__(
+            self,
+            bing_api_mkt: str,
+            bing_api_subscription_key: str,
+            max_results: Optional[int] = None
+    ):
+        super().__init__(max_results)
+        self.header = {"Ocp-Apim-Subscription-Key": bing_api_subscription_key}
         self.params = {
-            "mkt": config.bing_api_mkt,
+            "mkt": bing_api_mkt,
             "textDecorations": True,
             "textFormat": "HTML",
         }
@@ -29,8 +33,8 @@ class BingAPI(RetrieverBase):
             return dateutil.parser.parse(date).astimezone(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
         return None
 
-    def search(self, query: str, max_result_cnt: Optional[int] = None, *args, **kwargs) -> List[Retrieval]:
-        params: Dict[str, Any] = {**self.params, "q": query, "count": max_result_cnt or self.max_result_cnt}
+    def search(self, query: str, max_results: Optional[int] = None, *args, **kwargs) -> List[Retrieval]:
+        params: Dict[str, Any] = {**self.params, "q": query, "count": max_results or self.max_results}
         response = requests.get("https://api.bing.microsoft.com/v7.0/search", headers=self.header, params=params)
         response.raise_for_status()
         return [

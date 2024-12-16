@@ -1,6 +1,6 @@
 # Open AI Search
 
-> This project is still under heavy development.
+> This project is still under development.
 
 Open AI Search, inspired by perplexity and metaso.
 
@@ -13,12 +13,6 @@ python3 main.py
 ```
 
 Then open `http://localhost:8000` by default.
-
-## Demo
-
-> Thank [Free GPT](https://chat.gbfeng.com/) for free `gpt-3.5-turbo`, which will free forever.
-
-[open-ai-search.hub.lucien.ink:2016](https://open-ai-search.hub.lucien.ink:2016)
 
 ## Video
 

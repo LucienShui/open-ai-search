@@ -1,5 +1,6 @@
+from typing import Optional, List
+
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
 
 
 class Retrieval(BaseModel):
@@ -11,3 +12,15 @@ class Retrieval(BaseModel):
     date: Optional[str] = Field(description="Scraped date", default=None)
     icon_url: Optional[str] = Field(description="Scraped icon", default=None)
     author: Optional[str] = Field(description="Author", default=None)
+
+    def to_prompt(self) -> str:
+        prompt_list: List[str] = [
+            f"title: {self.title}",
+            f"snippet: {self.snippet}"
+        ]
+        if self.content:
+            prompt_list.append(f"content: {self.content}")
+        if self.date:
+            prompt_list.append(f"date: {self.date}")
+        prompt = "\n".join(prompt_list)
+        return prompt

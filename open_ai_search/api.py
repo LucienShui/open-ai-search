@@ -1,17 +1,19 @@
 import json
 from contextlib import asynccontextmanager
-from typing import Dict, AsyncIterable
+from typing import Dict, AsyncIterable, Annotated
 
-import uvicorn
-from fastapi import FastAPI, Request, status, Query
+from fastapi import FastAPI, Request, status, Query, APIRouter, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, HTMLResponse
 from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
-from open_ai_search.config import config
+from open_ai_search.common import project_root
+from open_ai_search.common.config_loader import load_config
+from open_ai_search.common.trace_info import TraceInfo
+from open_ai_search.config import Config
 from open_ai_search.rag import RAG
-from open_ai_search.retriever import BingScraper, BingAPI, FallbackRetriever
+from open_ai_search.retriever.ddg import DuckDuckGo
 
 
 class SearchRequest(BaseModel):
@@ -25,13 +27,10 @@ home_html: str = ...
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global rag, home_html
+    config: Config = load_config(Config, env_prefix="OAS", config_path="config.yaml")
 
-    bing_scraper = BingScraper(config.bing_search_base_url, config.bing_search_max_result_cnt)
-    bing_api = BingAPI()
-    bing = FallbackRetriever([bing_scraper, bing_api])
-
-    rag = RAG([bing])
-    with open("resource/www/index.html", "r") as f:
+    rag = RAG([DuckDuckGo(max_results=config.search.max_results)], config.openai)
+    with project_root.open("resource/www/index.html", "r") as f:
         home_html = f.read()
     yield
     del rag, home_html
@@ -40,12 +39,18 @@ async def lifespan(_: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # noqa
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+api_v1 = APIRouter(prefix="/api/v1")
+
+
+def get_trace_info(trace_id: Annotated[str | None, Header()] = None) -> TraceInfo:
+    return TraceInfo(trace_id=trace_id)
 
 
 @app.exception_handler(Exception)
@@ -59,21 +64,23 @@ async def exception_handler(_: Request, e: Exception) -> Response:
     )
 
 
-def stream(q: str, max_results: int) -> AsyncIterable:
-    for response in rag.search(q):
+async def stream(q: str, max_results: int, trace_info: TraceInfo) -> AsyncIterable:
+    async for response in rag.search(q, max_results, trace_info):
         yield json.dumps(response, ensure_ascii=False, separators=(',', ':'))
     yield '[DONE]'
 
 
-@app.get("/api/ai-search", response_model=Dict)
+@api_v1.get("/search", response_model=Dict)
 async def search(
         q: str = Query(description="Search query"),
-        max_results: int = Query(description="Max search result to use", default=30)
+        max_results: int = Query(description="Max search result to use", default=30),
+        trace_info: TraceInfo = Depends(get_trace_info),
 ):
-    return EventSourceResponse(stream(q, max_results))
+    trace_info.info({"query": q})
+    return EventSourceResponse(stream(q, max_results, trace_info))
 
 
-@app.get("/api/health")
+@api_v1.get("/health")
 async def healthcheck():
     return {"status": 200}
 
@@ -83,9 +90,4 @@ async def index():
     return HTMLResponse(content=home_html, status_code=200)
 
 
-def main():
-    uvicorn.run('main:app', host='0.0.0.0', port=config.port, workers=config.workers)
-
-
-if __name__ == '__main__':
-    main()
+app.include_router(api_v1)
