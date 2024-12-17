@@ -6,7 +6,7 @@ from open_ai_search.retriever import RetrieverBase, FallbackRetriever, BingScrap
 
 
 class EmptyRetriever(RetrieverBase):
-    def search(self, query: str, max_result_cnt: Optional[int] = None, *args, **kwargs) -> List[Retrieval]:
+    def search(self, query: str, max_results: Optional[int] = None, *args, **kwargs) -> List[Retrieval]:
         return []
 
 

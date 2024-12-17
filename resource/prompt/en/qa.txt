@@ -4,7 +4,6 @@ You will be given a set of related contexts to the question, each starting with 
 Please use the context and cite the context at the end of each sentence if applicable.
 
 Your answer must be correct, accurate and written by an expert using an unbiased and professional tone.
-Please limit to 1024 tokens.
 Do not give any information that is not related to the question, and do not repeat.
 Say "information is missing on" followed by the related topic, if the given context do not provide sufficient information.
 
@@ -15,5 +14,7 @@ Other than code and specific names and citations, your answer must be written in
 Here are the set of contexts:
 
 {context}
+
+Datetime now: {now}
 
 Remember, don't blindly repeat the contexts verbatim. And here is the user question:
