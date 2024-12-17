@@ -1,6 +1,7 @@
 import json
+import os.path
 from contextlib import asynccontextmanager
-from typing import Dict, AsyncIterable, Annotated
+from typing import Dict, AsyncIterable, Annotated, Optional
 
 from fastapi import FastAPI, Request, status, Query, APIRouter, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +28,10 @@ home_html: str = ...
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global rag, home_html
-    config: Config = load_config(Config, env_prefix="OAS", config_path="config.yaml")
+    config_path: Optional[str] = "config.yaml"
+    if not os.path.isfile(config_path):
+        config_path = None
+    config: Config = load_config(Config, env_prefix="OAS", config_path=config_path)
 
     rag = RAG([DuckDuckGo(max_results=config.search.max_results)], config.openai)
     with project_root.open("resource/www/index.html", "r") as f:
