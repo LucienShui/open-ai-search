@@ -15,4 +15,6 @@ Here are the set of contexts:
 
 {context}
 
+Datetime now: {now}
+
 Remember, don't blindly repeat the contexts verbatim. And here is the user question:

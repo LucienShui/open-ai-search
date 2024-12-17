@@ -8,7 +8,7 @@ class OpenAIConfig(BaseModel):
 
 
 class SearchConfig(BaseModel):
-    max_results: int = Field(default=30)
+    max_results: int = Field(default=10)
 
 
 class Config(BaseModel):
