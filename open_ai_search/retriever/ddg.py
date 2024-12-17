@@ -3,9 +3,9 @@ from typing import Optional, List, Dict
 from duckduckgo_search import AsyncDDGS
 
 from open_ai_search.entity import Retrieval
-from open_ai_search.retriever.base import RetrieverBase
+from open_ai_search.retriever.base import BaseRetriever
 
-class DuckDuckGo(RetrieverBase):
+class DuckDuckGo(BaseRetriever):
     def __init__(self, max_results: Optional[int] = None):
         super().__init__(max_results)
         self.max_results: Optional[int] = max_results or 10

@@ -1,16 +1,10 @@
+name: open-ai-search
+
 services:
-  ai-search:
-    build: .
-    image: open-ai-search-runtime:latest
-    container_name: open-ai-search
-    volumes:
-      - ${PWD}:/app
-      - ${PWD}/cache/hanlp:/root/.hanlp
-      - /etc/localtime:/etc/localtime:ro
-    working_dir: /app
+  server:
+    image: ghcr.io/lucienshui/open-ai-search:main
     ports:
-      - 8000:8000
-    restart: always
-    entrypoint: python3 main.py
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
+      - "8000:8000"
+    restart: unless-stopped
+    env_file:
+      - .env

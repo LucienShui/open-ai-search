@@ -6,11 +6,11 @@ import dateutil.parser
 import requests
 
 from open_ai_search.entity import Retrieval
-from open_ai_search.retriever.base import RetrieverBase
+from open_ai_search.retriever.base import BaseRetriever
 
 
 # https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
-class BingAPI(RetrieverBase):
+class BingAPI(BaseRetriever):
 
     def __init__(
             self,
