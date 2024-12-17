@@ -12,13 +12,13 @@ from open_ai_search.common.async_parallel_iterator import AsyncParallelIterator
 from open_ai_search.common.trace_info import TraceInfo
 from open_ai_search.config import OpenAIConfig
 from open_ai_search.entity import Retrieval
-from open_ai_search.retriever.base import RetrieverBase
+from open_ai_search.retriever.base import BaseRetriever
 
 
 class RAG:
 
-    def __init__(self, search_engine_list: List[RetrieverBase], config: OpenAIConfig):
-        self.retriever_list: List[RetrieverBase] = search_engine_list
+    def __init__(self, search_engine_list: List[BaseRetriever], config: OpenAIConfig):
+        self.retriever_list: List[BaseRetriever] = search_engine_list
 
         self.client = AsyncOpenAI(base_url=config.base_url, api_key=config.api_key)
         self.model = config.model
