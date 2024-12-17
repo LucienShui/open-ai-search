@@ -93,14 +93,21 @@ class RAG:
         return retrieval_list
 
     async def _search(self, query_list: List[str], max_results: int, trace_info: TraceInfo) -> List[Retrieval]:
-        retrieval_list: List[Retrieval] = sum(await asyncio.gather(*(
+        retrieval_list_list: List[List[Retrieval]] = await asyncio.gather(*(
             self._sub_search(sub_query, max_results, trace_info)
             for sub_query in query_list
-        )), [])
-        (trace_info.info if len(retrieval_list) > 0 else trace_info.warning)({  # noqa
-            "query_list": query_list, "retrieval_cnt": len(retrieval_list)
+        ))
+        vis = []
+        result_list: List[Retrieval] = []
+        for retrieval_list in retrieval_list_list:
+            for retrieval in retrieval_list:
+                if retrieval.link not in vis:
+                    result_list.append(retrieval)
+                    vis.append(retrieval.link)
+        (trace_info.info if len(result_list) > 0 else trace_info.warning)({  # noqa
+            "query_list": query_list, "retrieval_cnt": len(result_list)
         })
-        return retrieval_list
+        return result_list
 
     async def _answer(self, query: str, retrieval_list: List[Retrieval]) -> AsyncIterable[Dict[str, str]]:
         lang: str = self._lang_detector(query)
