@@ -73,7 +73,7 @@ async def stream(q: str, max_results: int, trace_info: TraceInfo) -> AsyncIterab
 @api_v1.get("/search", response_model=Dict)
 async def search(
         q: str = Query(description="Search query"),
-        max_results: int = Query(description="Max search result to use", default=30),
+        max_results: int = Query(description="Max search result to use", default=None),
         trace_info: TraceInfo = Depends(get_trace_info),
 ):
     trace_info.info({"query": q})

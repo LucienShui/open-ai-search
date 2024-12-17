@@ -12,7 +12,7 @@ class DuckDuckGo(RetrieverBase):
         self.ddg = AsyncDDGS()
 
     async def search(self, query: str, max_results: Optional[int] = None, *args, **kwargs) -> List[Retrieval]:
-        results: List[Dict[str, str]] = await self.ddg.atext(query, max_results=max_results)
+        results: List[Dict[str, str]] = await self.ddg.atext(query, max_results=max_results or self.max_results)
         retrievals: List[Retrieval] = [
             Retrieval(
                 title=result["title"],
