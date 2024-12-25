@@ -63,8 +63,21 @@
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
 <script>
-    function aLink(title, link) {
-        return `<a href="${link}" target="_blank">${title}</a>`
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function aLink(title, link, snippet) {
+        return `<a href="${link}" target="_blank" title="${escapeHtml(snippet)}">${title}</a>`
+    }
+
+    function citeLink(citeId, link, snippet) {
+        return `<sup>[<a href="${link}" target="_blank" title="${escapeHtml(snippet)}">${citeId}</a>]</sup>`
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -106,8 +119,9 @@
 
                 function replace_citation(text) {
                     for (const citation of citationList) {
-                        let citeId = `[${citation["i"]}]`
-                        text = text.replace(`[${citeId}]`, aLink(citeId, citation["link"]));
+                        const citeId = citation["i"];
+                        const snippet = citation["snippet"];
+                        text = text.replace(`<cite:${citeId}>`, citeLink(citeId, citation["link"], snippet));
                     }
                     return text
                 }
@@ -132,7 +146,8 @@
                             let i = citation["i"];
                             let link = citation["link"];
                             let title = citation["title"];
-                            citationStrList.push(i + ". " + aLink(title, link));
+                            const snippet = citation["snippet"];
+                            citationStrList.push(i + ". " + aLink(title, link, snippet));
                             citationList.push(citation);
                         }
                         responseBlock[block] = citationStrList.join("\n");

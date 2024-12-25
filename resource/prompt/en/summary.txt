@@ -9,9 +9,9 @@ Example:
 
 Please identify worthwhile topics that should summarize, and write summaries not longer than 20 tokens each item.
 
-You will be given a set of related contexts to the question, each starting with a reference number like [[x]], where x is a number.
-Please cite the contexts with the reference numbers, in the format [[x]].
-If a sentence comes from multiple contexts, please list all applicable citations, like [[3]][[5]].
+You will be given a set of related contexts to the question, each starting with a reference number like <cite:x>, where x is a number.
+Please cite the contexts with the reference numbers, in the format <cite:x>.
+If a sentence comes from multiple contexts, please list all applicable citations, like <cite:3><cite:5>.
 
 Your summaries must be correct, accurate and written by an expert using an unbiased and professional tone.
 Do not give any information that is not related to the question, and do not repeat.
