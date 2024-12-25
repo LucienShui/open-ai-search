@@ -55,7 +55,7 @@ class RAG:
     @classmethod
     def _build_context(cls, retrieval_list: List[Retrieval]) -> str:
         retrival_prompt_list: List[str] = [
-            "\n".join([f"[[{i + 1}]]", retrieval.to_prompt()])
+            "\n".join([f"<cite:{i + 1}>", retrieval.to_prompt()])
             for i, retrieval in enumerate(retrieval_list)
         ]
         return "\n\n".join(retrival_prompt_list)
@@ -138,7 +138,7 @@ class RAG:
             assert len(retrieval_list) > 0, "Empty retrieval result"
 
             citations: List[Dict[str, Any]] = [{
-                "i": i + 1, **r.model_dump(exclude={"snippet", "content"})
+                "i": i + 1, **r.model_dump(exclude={"content"})
             } for i, r in enumerate(retrieval_list)]
             yield {"block": "citation", "data": citations}
 
