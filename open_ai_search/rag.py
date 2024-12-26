@@ -88,7 +88,11 @@ class RAG:
         messages.extend(sum([
             [
                 {"role": "user", "content": q},
-                {"role": "assistant", "content": "\n".join(["```json", json.dumps(a, ensure_ascii=False, separators=(",", ":")), "```"])}
+                {
+                    "role": "assistant",
+                    "content": "\n".join([
+                        "```json", json.dumps(a, ensure_ascii=False, separators=(",", ":")), "```"
+                    ])}
             ]
             for q, a in self.rewrite_example[lang]
         ], []))
@@ -139,34 +143,18 @@ class RAG:
         })
         return result_list
 
-    async def _answer(self, query: str, retrieval_list: List[Retrieval]) -> AsyncIterable[Dict[str, str]]:
-        lang: str = self._lang_detector(query)
-        context = self._build_context(retrieval_list)
-
-        async_iter = AsyncParallelIterator({
-            name: await self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    self._get_system_message(template, {"context": context}),
-                    {"role": "user", "content": query}
-                ],
-                stream=True
-            )
-            for name, template in self.task_prompt_dict[lang].items()
-        })
-
-        async for name, response in async_iter:
-            if delta := response.choices[0].delta.content:
-                yield {"block": name, "delta": delta}
-
     async def search(
             self, query: str,
             max_results: int,
             trace_info: TraceInfo
     ) -> AsyncIterable[Dict[str, Union[str, Dict]]]:
         try:
+            # query rewrite
             query_list: List[str] = await self._rewrite(query, trace_info)
+            yield {"block": "query_list", "data": query_list}
             trace_info.info({"query_list": query_list})
+
+            # retrieve
             retrieval_list: List[Retrieval] = await self._search(query_list, max_results, trace_info)
             assert len(retrieval_list) > 0, "Empty retrieval result"
 
@@ -175,7 +163,27 @@ class RAG:
             } for i, r in enumerate(retrieval_list)]
             yield {"block": "citation", "data": citations}
 
-            async for block in self._answer(query, retrieval_list):
-                yield block
+            # answer
+            lang = self._lang_detector(query)
+            context = self._build_context(retrieval_list)
+
+            async_iter = AsyncParallelIterator({
+                name: await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        self._get_system_message(template, {
+                            "query_list": query_list,
+                            "context": context
+                        }),
+                        {"role": "user", "content": query}
+                    ],
+                    stream=True
+                )
+                for name, template in self.task_prompt_dict[lang].items()
+            })
+
+            async for name, response in async_iter:
+                if delta := response.choices[0].delta.content:
+                    yield {"block": name, "delta": delta}
         except Exception as e:
             yield {"error": str(e)}

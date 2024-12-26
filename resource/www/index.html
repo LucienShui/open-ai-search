@@ -46,23 +46,20 @@
 <div class="container">
   <div class="main-body">
     <h1>Open AI Search</h1>
-    <div>
+    <div style="margin-bottom: 16px">
       <form id="search-form" action="#">
-        <label>
-          Query:
-          <input type="text" id="query">
-        </label>
-        <input type="submit" value="Submit">
+        <label for="query">Query:</label>
+        <input type="text" id="query">
+        <button type="submit">Submit</button>
       </form>
     </div>
-    <div id="info">
-    </div>
+    <div id="info"></div>
     <div id="content"></div>
   </div>
   <div id="summary" class="main-body"></div>
 </div>
 </body>
-<footer style="text-align: center">
+<footer style="text-align: center" class="markdown-body">
   <p><a href="https://github.com/LucienShui/open-ai-search" target="_blank">GitHub Source Code</a></p>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -111,6 +108,7 @@
       content.innerHTML = "";
       summary.innerHTML = "";
       info.innerHTML = "";
+      let start_time = new Date().getTime();
 
       if (typeof (EventSource) !== "undefined") {
         let params = new URLSearchParams({
@@ -145,6 +143,7 @@
 
         eventSource.onmessage = function (event) {
           if (event.data === "[DONE]") {
+            info.innerHTML += `<p>Done, cost ${(new Date().getTime() - start_time) / 1000}s</p>`;
             eventSource.close();
             return;
           }
@@ -152,7 +151,7 @@
           if ("error" in sseBody) {
             eventSource.close();
             let message = sseBody["error"];
-            info.innerHTML = `error: ${message}`;
+            info.innerHTML += `error: ${message}`;
             return;
           }
           let block = sseBody["block"];
@@ -168,7 +167,15 @@
               citationList.push(citation);
             }
             responseBlock[block] = citationStrList.join("\n");
-            info.innerHTML = `<p>Found ${citationList.length} results</p>`
+            info.innerHTML += `<p>Found ${citationList.length} results</p>`;
+          } else if (block === "query_list") {
+            const rawContent = info.innerHTML;
+            let buffer = "";
+            for (const query of sseBody["data"]) {
+              buffer += `<li>${query}</li>`
+              info.innerHTML = `${rawContent}<p>Searching:</p><ul>${buffer}</ul>`
+              setTimeout(() => {}, 500);
+            }
           } else {
             responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
           }
