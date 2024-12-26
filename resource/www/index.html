@@ -190,7 +190,7 @@
             info.innerHTML = marked.parse(infoBlock);
           } else if (block === "query_list") {
             infoBlock += `## Progress\n`
-            infoBlock += `+ Searching:\n`
+            infoBlock += `+ Searching\n`
             for (const query of sseBody["data"]) {
               infoBlock += `  + ${query}\n`
             }

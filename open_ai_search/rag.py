@@ -10,18 +10,22 @@ from openai import AsyncOpenAI
 from open_ai_search.common import project_root
 from open_ai_search.common.async_parallel_iterator import AsyncParallelIterator
 from open_ai_search.common.trace_info import TraceInfo
-from open_ai_search.config import OpenAIConfig
+from open_ai_search.config import Config, OpenAIConfig
 from open_ai_search.entity import Retrieval
 from open_ai_search.retriever.base import BaseRetriever
 
 
 class RAG:
 
-    def __init__(self, search_engine_list: List[BaseRetriever], config: OpenAIConfig):
+    def __init__(self, search_engine_list: List[BaseRetriever], config: Config):
         self.retriever_list: List[BaseRetriever] = search_engine_list
 
-        self.client = AsyncOpenAI(base_url=config.base_url, api_key=config.api_key)
-        self.model = config.model
+        self.client = AsyncOpenAI(base_url=config.openai.base_url, api_key=config.openai.api_key)
+        self.model = config.openai.model
+
+        rewrite_openai: OpenAIConfig = config.rewrite.openai or config.openai
+        self.rewrite_client = AsyncOpenAI(base_url=rewrite_openai.base_url, api_key=rewrite_openai.api_key)
+        self.rewrite_model = rewrite_openai.model
 
         prompt_base_dir = "resource/prompt"
         self.prompt_filename: Dict[str, str] = {
@@ -45,7 +49,7 @@ class RAG:
         self.zh_pattern: re.Pattern = re.compile(r"[\u4e00-\u9fa5]")
         self.json_pattern: re.Pattern = re.compile(r"```json\n(.*)\n```", re.DOTALL)
 
-        self.rewrite_count: int = 3
+        self.rewrite_count: int = config.rewrite.max_results
 
         self.rewrite_example = {
             "en": [
@@ -99,8 +103,8 @@ class RAG:
         messages.append({"role": "user", "content": query})
 
         trace_info.debug({"messages": messages})
-        openai_response = await self.client.chat.completions.create(
-            model=self.model, messages=messages, stream=False, temperature=0
+        openai_response = await self.rewrite_client.chat.completions.create(
+            model=self.rewrite_model, messages=messages, stream=False, temperature=0
         )
         str_response = openai_response.choices[0].message.content
         trace_info.debug({"str_response": str_response})
