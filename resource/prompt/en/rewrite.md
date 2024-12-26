@@ -13,7 +13,7 @@ The search keywords you provide for each sub-question will be used in search eng
 Please use JSON List format for your output:
 
 ```json
-["<sub-question>","<sub-question>"]
+["<sub_question_1>","<sub_question_2>"]
 ```
 
 # Notes
@@ -21,6 +21,7 @@ Please use JSON List format for your output:
 + For unfamiliar abbreviations, names of people, organizations, proper nouns, etc., please keep them unchanged; do not attempt to rewrite or omit them.
 + If you decide that a question does not need to be decomposed or extended, simply return an empty list.
 + Please prioritize providing the search keywords for up to {max_num} of the most important questions.
++ Search keywords for sub-questions should be separated by spaces, for example: "<keyword_1> <keyword_2>".
 + Your response should start with "```json" and end with "```".
 
 # External Information

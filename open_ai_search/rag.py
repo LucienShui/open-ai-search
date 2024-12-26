@@ -47,6 +47,22 @@ class RAG:
 
         self.rewrite_count: int = 3
 
+        self.rewrite_example = {
+            "en": [
+                ("What is the market value of Apple Inc.?",
+                 ["Apple Inc. market value", "Apple Inc. stock", "Apple Inc. Introduction"]),
+                ("How does machine learning work?",
+                 ["Machine learning process", "Machine learning applications", "Machine learning algorithms"]),
+                ("Can you explain the theory of relativity?",
+                 ["Theory of relativity explanation", "Special relativity", "General relativity"])
+            ],
+            "zh": [
+                ("苹果公司的市值是多少", ["苹果公司 市值", "苹果公司 股票", "苹果公司 介绍"]),
+                ("机器学习是如何工作的", ["机器学习 过程", "机器学习 应用", "机器学习 算法"]),
+                ("相对论是什么", ["相对论 解释", "狭义相对论", "广义相对论"])
+            ]
+        }
+
     def _lang_detector(self, text: str) -> str:
         if self.zh_pattern.search(text):
             return "zh"
@@ -61,18 +77,29 @@ class RAG:
         return "\n\n".join(retrival_prompt_list)
 
     @classmethod
-    def _messages_prepare(cls, query: str, template: str, mapping: Dict[str, str | int]) -> List[Dict[str, str]]:
+    def _get_system_message(cls, template: str, mapping: Dict[str, str | int], ) -> Dict[str, str]:
         system = template.format_map({"now": datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | mapping)
-        messages = [{"role": "system", "content": system}, {"role": "user", "content": query}]
-        return messages
+        return {"role": "system", "content": system}
 
     async def _rewrite(self, query: str, trace_info: TraceInfo) -> List[str]:
         lang: str = self._lang_detector(query)
-        messages = self._messages_prepare(query, self.query_rewrite_prompt[lang], {"max_num": self.rewrite_count})
+
+        messages = [self._get_system_message(self.query_rewrite_prompt[lang], {"max_num": self.rewrite_count})]
+        messages.extend(sum([
+            [
+                {"role": "user", "content": q},
+                {"role": "assistant", "content": "\n".join(["```json", json.dumps(a, ensure_ascii=False, separators=(",", ":")), "```"])}
+            ]
+            for q, a in self.rewrite_example[lang]
+        ], []))
+        messages.append({"role": "user", "content": query})
+
+        trace_info.debug({"messages": messages})
         openai_response = await self.client.chat.completions.create(
             model=self.model, messages=messages, stream=False, temperature=0
         )
         str_response = openai_response.choices[0].message.content
+        trace_info.debug({"str_response": str_response})
         query_list = [query]
         try:
             if (match := self.json_pattern.search(str_response)) is not None:
@@ -80,6 +107,9 @@ class RAG:
                 query_list = json.loads(json_str_response)
         except (json.JSONDecodeError,):
             trace_info.warning({"query": query, "response": str_response, "message": "query_rewrite_failed"})
+        if not query_list:
+            trace_info.warning({"query": query, "response": str_response, "message": "query_rewrite_empty_result"})
+            query_list.append(query)
         return query_list[:self.rewrite_count]
 
     async def _sub_search(self, sub_query: str, max_results: int, trace_info: TraceInfo) -> List[Retrieval]:
@@ -116,7 +146,10 @@ class RAG:
         async_iter = AsyncParallelIterator({
             name: await self.client.chat.completions.create(
                 model=self.model,
-                messages=self._messages_prepare(query, template, {"context": context}),
+                messages=[
+                    self._get_system_message(template, {"context": context}),
+                    {"role": "user", "content": query}
+                ],
                 stream=True
             )
             for name, template in self.task_prompt_dict[lang].items()
