@@ -21,6 +21,9 @@ class TraceInfo:
             self.payload | (addition_payload or {})
         )
 
+    def debug(self, payload: dict):
+        self.logger.debug(self.payload | payload)
+
     def info(self, payload: dict):
         self.logger.info(self.payload | payload)
 
