@@ -167,6 +167,9 @@ class RAG:
             lang = self._lang_detector(query)
             context = self._build_context(retrieval_list)
 
+            final_query = "\n".join(["Query rewrite:", *[f"+ {q}" for q in query_list], "", "User's raw query:", query])
+            trace_info.debug({"final_query": final_query})
+
             async_iter = AsyncParallelIterator({
                 name: await self.client.chat.completions.create(
                     model=self.model,
@@ -175,7 +178,7 @@ class RAG:
                             "query_list": query_list,
                             "context": context
                         }),
-                        {"role": "user", "content": query}
+                        {"role": "user", "content": final_query}
                     ],
                     stream=True
                 )

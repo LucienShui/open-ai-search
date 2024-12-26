@@ -21,8 +21,22 @@
       padding: 45px;
     }
 
+    .side-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 45px;
+    }
+
     @media (max-width: 767px) {
       .main-body {
+        padding: 15px;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .side-body {
         padding: 15px;
       }
     }
@@ -53,10 +67,12 @@
         <button type="submit">Submit</button>
       </form>
     </div>
-    <div id="info"></div>
     <div id="content"></div>
   </div>
-  <div id="summary" class="main-body"></div>
+  <div class="side-body">
+    <div id="info"></div>
+    <div id="summary"></div>
+  </div>
 </div>
 </body>
 <footer style="text-align: center" class="markdown-body">
@@ -108,7 +124,6 @@
       content.innerHTML = "";
       summary.innerHTML = "";
       info.innerHTML = "";
-      let start_time = new Date().getTime();
 
       if (typeof (EventSource) !== "undefined") {
         let params = new URLSearchParams({
@@ -131,6 +146,8 @@
         }
         let keysOrder = ["qa", "related_question", "entity", "citation"]
         let citationList = [];
+        let infoBlock = "";
+        let start_time = new Date().getTime();
 
         function replace_citation(text) {
           for (const citation of citationList) {
@@ -143,7 +160,8 @@
 
         eventSource.onmessage = function (event) {
           if (event.data === "[DONE]") {
-            info.innerHTML += `<p>Done, cost ${(new Date().getTime() - start_time) / 1000}s</p>`;
+            infoBlock += `+ Done, cost ${(new Date().getTime() - start_time) / 1000}s`
+            info.innerHTML = marked.parse(infoBlock);
             eventSource.close();
             return;
           }
@@ -151,7 +169,8 @@
           if ("error" in sseBody) {
             eventSource.close();
             let message = sseBody["error"];
-            info.innerHTML += `error: ${message}`;
+            infoBlock += `+ *error: ${message}*`;
+            info.innerHTML = marked.parse(infoBlock);
             return;
           }
           let block = sseBody["block"];
@@ -167,15 +186,15 @@
               citationList.push(citation);
             }
             responseBlock[block] = citationStrList.join("\n");
-            info.innerHTML += `<p>Found ${citationList.length} results</p>`;
+            infoBlock += `+ Found ${citationList.length} results\n`
+            info.innerHTML = marked.parse(infoBlock);
           } else if (block === "query_list") {
-            const rawContent = info.innerHTML;
-            let buffer = "";
+            infoBlock += `## Progress\n`
+            infoBlock += `+ Searching:\n`
             for (const query of sseBody["data"]) {
-              buffer += `<li>${query}</li>`
-              info.innerHTML = `${rawContent}<p>Searching:</p><ul>${buffer}</ul>`
-              setTimeout(() => {}, 500);
+              infoBlock += `  + ${query}\n`
             }
+            info.innerHTML = marked.parse(infoBlock);
           } else {
             responseBlock[block] = replace_citation(responseBlock[block] + sseBody["delta"]);
           }
