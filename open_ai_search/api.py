@@ -33,7 +33,7 @@ async def lifespan(_: FastAPI):
         config_path = None
     config: Config = load_config(Config, env_prefix="OAS", config_path=config_path)
 
-    rag = RAG([DuckDuckGo(max_results=config.search.max_results)], config.openai)
+    rag = RAG([DuckDuckGo(max_results=config.search.max_results)], config)
     with project_root.open("resource/www/index.html", "r") as f:
         home_html = f.read()
     yield
