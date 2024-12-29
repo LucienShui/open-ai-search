@@ -13,7 +13,7 @@ class SearchConfig(BaseModel):
 
 class RewriteConfig(BaseModel):
     max_results: int = Field(default=3)
-    openai: OpenAIConfig | None = Field(default=None)
+    openai: OpenAIConfig = Field(default=None)
 
 
 class Config(BaseModel):
