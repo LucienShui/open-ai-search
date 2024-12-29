@@ -4,7 +4,12 @@ services:
   server:
     image: ghcr.io/lucienshui/open-ai-search:main
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
     restart: unless-stopped
+    command:
+      - "--workers"
+      - "4"
+    environment:
+      ENV: "prod"
     env_file:
       - .env
