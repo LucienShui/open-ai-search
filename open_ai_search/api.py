@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sse_starlette import EventSourceResponse
 
 from open_ai_search.common import project_root
-from open_ai_search.common.config_loader import load_config
+from open_ai_search.common.config_loader import Loader
 from open_ai_search.common.trace_info import TraceInfo
 from open_ai_search.config import Config
 from open_ai_search.rag import RAG
@@ -31,7 +31,8 @@ async def lifespan(_: FastAPI):
     config_path: Optional[str] = "config.yaml"
     if not os.path.isfile(config_path):
         config_path = None
-    config: Config = load_config(Config, env_prefix="OAS", config_path=config_path)
+    config_loader = Loader(Config, env_prefix="OAS", config_path=config_path)
+    config: Config = config_loader.load()
 
     rag = RAG([DuckDuckGo(max_results=config.search.max_results)], config)
     with project_root.open("resource/www/index.html", "r") as f:
