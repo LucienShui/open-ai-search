@@ -104,7 +104,7 @@ class RAG:
 
         trace_info.debug({"messages": messages})
         try:
-            with asyncio.timeout(3):
+            async with asyncio.timeout(3):
                 openai_response = await self.rewrite_client.chat.completions.create(
                     model=self.rewrite_model, messages=messages, stream=False, temperature=0
                 )
