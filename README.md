@@ -6,10 +6,17 @@ Open AI Search, inspired by perplexity and metaso.
 
 ## Usage
 
+> If you don't have poetry, install & configure it first.
+
+```shell
+pip install poetry
+poetry config virtualenvs.create false
+```
+
 ```shell
 cp config.example.yaml config.yaml
-pip install -r requirements.txt
-python3 main.py
+poetry install --only main --no-root --no-directory  
+uvicorn open_ai_search.api:app
 ```
 
 Then open `http://localhost:8000` by default.

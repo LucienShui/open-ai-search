@@ -103,9 +103,14 @@ class RAG:
         messages.append({"role": "user", "content": query})
 
         trace_info.debug({"messages": messages})
-        openai_response = await self.rewrite_client.chat.completions.create(
-            model=self.rewrite_model, messages=messages, stream=False, temperature=0
-        )
+        try:
+            with asyncio.timeout(3):
+                openai_response = await self.rewrite_client.chat.completions.create(
+                    model=self.rewrite_model, messages=messages, stream=False, temperature=0
+                )
+        except asyncio.TimeoutError:
+            trace_info.warning({"message": "query_rewrite_timeout"})
+            return [query]
         str_response = openai_response.choices[0].message.content
         trace_info.debug({"str_response": str_response})
         query_list = [query]
@@ -114,9 +119,9 @@ class RAG:
                 json_str_response: str = match.group(1).strip(" \n\r\t`")
                 query_list = json.loads(json_str_response)
         except (json.JSONDecodeError,):
-            trace_info.warning({"query": query, "response": str_response, "message": "query_rewrite_failed"})
+            trace_info.warning({"response": str_response, "message": "query_rewrite_failed"})
         if not query_list:
-            trace_info.warning({"query": query, "response": str_response, "message": "query_rewrite_empty_result"})
+            trace_info.warning({"response": str_response, "message": "query_rewrite_empty_result"})
             query_list.append(query)
         return query_list[:self.rewrite_count]
 
@@ -170,7 +175,7 @@ class RAG:
             # answer
             lang = self._lang_detector(query)
             context = self._build_context(retrieval_list)
-            trace_info.info({"lang": lang, "context_length": context})
+            trace_info.info({"lang": lang, "context_length": len(context)})
 
             final_query = "\n".join(["Query rewrite:", *[f"+ {q}" for q in query_list], "", "User's raw query:", query])
             trace_info.info({"final_query": final_query})
