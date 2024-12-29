@@ -160,7 +160,7 @@ class RAG:
 
             # retrieve
             retrieval_list: List[Retrieval] = await self._search(query_list, max_results, trace_info)
-            assert len(retrieval_list) > 0, "Empty retrieval result"
+            trace_info.info({"retrieve_count": len(retrieval_list)})
 
             citations: List[Dict[str, Any]] = [{
                 "i": i + 1, **r.model_dump(exclude={"content"})
@@ -170,9 +170,10 @@ class RAG:
             # answer
             lang = self._lang_detector(query)
             context = self._build_context(retrieval_list)
+            trace_info.info({"lang": lang, "context_length": context})
 
             final_query = "\n".join(["Query rewrite:", *[f"+ {q}" for q in query_list], "", "User's raw query:", query])
-            trace_info.debug({"final_query": final_query})
+            trace_info.info({"final_query": final_query})
 
             async_iter = AsyncParallelIterator({
                 name: await self.client.chat.completions.create(
@@ -192,5 +193,7 @@ class RAG:
             async for name, response in async_iter:
                 if delta := response.choices[0].delta.content:
                     yield {"block": name, "delta": delta}
+            trace_info.info({"message": "finished"})
         except Exception as e:
-            yield {"error": str(e)}
+            trace_info.exception({"error": f"{e.__class__.__name__}: {str(e)}"})
+            yield {"error": f"{e.__class__.__name__}: {str(e)}"}

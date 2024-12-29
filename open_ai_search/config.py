@@ -10,9 +10,11 @@ class OpenAIConfig(BaseModel):
 class SearchConfig(BaseModel):
     max_results: int = Field(default=10, description="Maximum number of results per rewrite query to return")
 
+
 class RewriteConfig(BaseModel):
     max_results: int = Field(default=3)
     openai: OpenAIConfig | None = Field(default=None)
+
 
 class Config(BaseModel):
     openai: OpenAIConfig
